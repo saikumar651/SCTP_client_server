@@ -13,18 +13,19 @@
 
 #define PORT 8085
 
-void tcp_client();
+void sctp_client();
 
 void main()
-{	int client_fd;
-	tcp_client(client_fd);        
+{	
+	sctp_client();        
 }
 
-void tcp_client(int client_fd){
-
+void sctp_client(){
+    int client_fd;
+    char buffer[1024];
     struct sockaddr_in server_addr;
 
-    client_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_SCTP);
+    client_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
     if (client_fd == -1)
     	error(1, errno, "error opening socket");
 
@@ -35,6 +36,16 @@ void tcp_client(int client_fd){
 
     int ret = connect(client_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
     if (ret == -1)
-    	error(1, errno, "error connecting to server,check whether the server is running");
+    	error(1, errno, "error connecting to server");
+
+    int recv_ret = sctp_recvmsg(client_fd, buffer, sizeof(buffer), NULL, 0, 0, 0);
+    if(recv_ret == -1)
+        error(1,errno,"message receiving failed\n");
+    else
+        printf("%d bytes are received\n",recv_ret);
+
+    for(int i=0;i<recv_ret;i++)
+        printf("%c",buffer[i]);
+
     close(client_fd);
 }

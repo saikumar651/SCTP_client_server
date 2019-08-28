@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -13,18 +14,20 @@
 
 #define PORT 8085
 
-void tcp_server();
+void sctp_server();
 
 void main()
-{	int server_fd,client_fd;
-	tcp_server(server_fd,client_fd);        
+{	
+	sctp_server();        
 }
 
-void tcp_server(int client_fd,int server_fd){
+void sctp_server(){
+    int server_fd,client_fd;
+    char *msg="hi from server!";
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
 
-    server_fd = socket(PF_INET, SOCK_STREAM, IPPROTO_SCTP);
+    server_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP);
     if (server_fd == -1)
     	error(1, errno, "error creating socket");
 
@@ -33,8 +36,8 @@ void tcp_server(int client_fd,int server_fd){
     server_addr.sin_port = htons(PORT);
     server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    int ret = bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
-    if (ret == -1){
+    int bind_ret = bind(server_fd, (struct sockaddr *)&server_addr, sizeof(server_addr));
+    if (bind_ret == -1){
         close(server_fd);
     	error(1, errno, "error binding to port\n");
     }
@@ -49,5 +52,12 @@ void tcp_server(int client_fd,int server_fd){
         error(1, errno,"error accepting connections\n");
     else
         printf("connection established succesfully\n");
-    close(client_fd);            
+
+    int send_ret = sctp_sendmsg(client_fd, msg,strlen(msg)+1, NULL, 0, 0, 0, 0, 0, 0 );
+    if(send_ret == -1)
+        error(1,errno,"message sending failed\n");
+    else
+        printf("%d bytes are succesfully sent\n",send_ret);
+
+    close(server_fd);            
 }
